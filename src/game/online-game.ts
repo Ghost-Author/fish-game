@@ -115,6 +115,7 @@ export class OnlineGame {
       }));
 
     const fishes: RenderFish[] = this.state.fishes.map((f) => ({
+      id: f.id,
       pos: this.scalePos(f.pos),
       vel: this.scaleVel(f.vel),
       radius: this.scaleRadius(f.radius),

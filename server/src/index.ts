@@ -43,6 +43,7 @@ type Room = {
   spawnTimer: number;
   spawnInterval: number;
   level: number;
+  maxRadius: number;
 };
 
 type DBData = { leaderboard: LeaderboardEntry[] };
@@ -81,7 +82,8 @@ const createRoom = () => {
     tick: 0,
     spawnTimer: 0,
     spawnInterval: 0.9,
-    level: 1
+    level: 1,
+    maxRadius: 120
   };
   rooms.set(code, room);
   return room;
@@ -183,7 +185,9 @@ const updateRoom = (room: Room) => {
           room.fishes.splice(i, 1);
           player.score += Math.max(1, Math.round(fish.radius * 2));
           const growth = fish.radius * fish.radius * 0.45;
-          player.radius = Math.sqrt(player.radius * player.radius + growth);
+          const softness = clamp(1 - (player.radius - 60) / 120, 0.25, 1);
+          const next = Math.sqrt(player.radius * player.radius + growth * softness);
+          player.radius = Math.min(room.maxRadius, next);
         } else if (player.shield > 0) {
           player.shield = 0;
           room.fishes.splice(i, 1);
@@ -209,7 +213,10 @@ const updateRoom = (room: Room) => {
         const smaller = bigger === a ? b : bigger === b ? a : null;
         if (bigger && smaller) {
           bigger.score += Math.max(1, Math.round(smaller.radius * 2));
-          bigger.radius = Math.sqrt(bigger.radius * bigger.radius + smaller.radius * smaller.radius * 0.5);
+          const growth = smaller.radius * smaller.radius * 0.5;
+          const softness = clamp(1 - (bigger.radius - 60) / 120, 0.25, 1);
+          const next = Math.sqrt(bigger.radius * bigger.radius + growth * softness);
+          bigger.radius = Math.min(room.maxRadius, next);
           smaller.alive = false;
           smaller.deadAt = Date.now();
           recordScore(smaller.name, smaller.score);

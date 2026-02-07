@@ -48,6 +48,7 @@ export class LocalGame {
   private level = 1;
   private spawnTimer = 0;
   private spawnInterval = 0.9;
+  private maxRadius = 120;
   private target: Vec2 = { x: 0, y: 0 };
   private width = 0;
   private height = 0;
@@ -233,7 +234,9 @@ export class LocalGame {
     const gained = Math.max(1, Math.round(baseRadius * 2));
     this.score += gained;
     const growth = fish.radius * fish.radius * 0.45;
-    this.player.radius = Math.sqrt(this.player.radius * this.player.radius + growth);
+    const softness = clamp(1 - (this.player.radius - 60) / 120, 0.25, 1);
+    const next = Math.sqrt(this.player.radius * this.player.radius + growth * softness);
+    this.player.radius = Math.min(this.maxRadius, next);
     this.ripples.push({ pos: { ...fish.pos }, radius: fish.radius * 0.6, alpha: 0.7 });
     this.spawnParticles(fish.pos, fish.color, 14);
     this.options.renderer.shake(4);
@@ -349,7 +352,7 @@ export class LocalGame {
     const vx = side === 'left' ? speed : -speed;
     const color = scale <= 1 ? '#7cff7c' : scale < 1.4 ? '#ffbf47' : '#ff6b6b';
     const outline = 'rgba(255,255,255,0.6)';
-    this.fishes.push({ pos: { x, y }, vel: { x: vx, y: rand(-20, 20) }, radius, color, outline });
+    this.fishes.push({ id: nextId(), pos: { x, y }, vel: { x: vx, y: rand(-20, 20) }, radius, color, outline });
   }
 
   private spawnItem() {

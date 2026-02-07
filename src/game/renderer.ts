@@ -1,6 +1,6 @@
 import type { Vec2 } from '../../shared/protocol';
 
-export type RenderFish = { pos: Vec2; radius: number; color: string; outline: string; vel: Vec2 };
+export type RenderFish = { id: string; pos: Vec2; radius: number; color: string; outline: string; vel: Vec2 };
 export type RenderPlayer = { pos: Vec2; radius: number; color: string; outline: string; accent: string; name?: string; facingRight?: boolean };
 export type RenderItem = { pos: Vec2; kind: 'boost' | 'shield' | 'slow' | 'magnet'; ttl: number };
 export type Bubble = { pos: Vec2; speed: number; radius: number; alpha: number };
@@ -21,10 +21,21 @@ export type RenderState = {
 };
 
 type Species = {
-  id: 'clown' | 'angel' | 'puffer' | 'blue-tang' | 'goldfish';
+  id:
+    | 'clown'
+    | 'angel'
+    | 'puffer'
+    | 'blue-tang'
+    | 'goldfish'
+    | 'turtle'
+    | 'seahorse'
+    | 'octopus'
+    | 'jellyfish'
+    | 'crab'
+    | 'whale';
   body: 'round' | 'torpedo' | 'disk';
-  tail: 'fork' | 'fan' | 'moon';
-  pattern: 'clown' | 'angel' | 'puffer' | 'tang' | 'gold';
+  tail: 'fork' | 'fan' | 'moon' | 'none';
+  pattern: 'clown' | 'angel' | 'puffer' | 'tang' | 'gold' | 'turtle' | 'seahorse' | 'octopus' | 'jelly' | 'crab' | 'whale';
   palette: {
     base: string;
     base2: string;
@@ -69,6 +80,48 @@ const SPECIES: Species[] = [
     tail: 'fan',
     pattern: 'gold',
     palette: { base: '#ffb55a', base2: '#ffd9a2', stripe: '#ff7b4a', outline: '#2b2b2b', cheek: '#ff9bb7' }
+  },
+  {
+    id: 'turtle',
+    body: 'disk',
+    tail: 'none',
+    pattern: 'turtle',
+    palette: { base: '#6ac46a', base2: '#a8e4a8', stripe: '#2f7c2f', outline: '#2b2b2b', cheek: '#ff9bb7' }
+  },
+  {
+    id: 'seahorse',
+    body: 'torpedo',
+    tail: 'none',
+    pattern: 'seahorse',
+    palette: { base: '#ffb3c6', base2: '#ffd9e4', stripe: '#ff7b9f', outline: '#2b2b2b', cheek: '#ff9bb7' }
+  },
+  {
+    id: 'octopus',
+    body: 'round',
+    tail: 'none',
+    pattern: 'octopus',
+    palette: { base: '#a894ff', base2: '#cbbdff', stripe: '#7a5ad6', outline: '#2b2b2b', cheek: '#ff9bb7' }
+  },
+  {
+    id: 'jellyfish',
+    body: 'round',
+    tail: 'none',
+    pattern: 'jelly',
+    palette: { base: '#9ee8ff', base2: '#d7f6ff', stripe: '#6ac7e6', outline: '#2b2b2b', cheek: '#ff9bb7' }
+  },
+  {
+    id: 'crab',
+    body: 'round',
+    tail: 'none',
+    pattern: 'crab',
+    palette: { base: '#ff8f8f', base2: '#ffc1c1', stripe: '#ff5f5f', outline: '#2b2b2b', cheek: '#ff9bb7' }
+  },
+  {
+    id: 'whale',
+    body: 'torpedo',
+    tail: 'moon',
+    pattern: 'whale',
+    palette: { base: '#5aa6ff', base2: '#99caff', stripe: '#2e5d9b', outline: '#2b2b2b', cheek: '#ff9bb7' }
   }
 ];
 
@@ -225,11 +278,13 @@ export class Renderer {
   }
 
   private renderFish(fish: RenderFish, facingRight: boolean) {
-    const species = this.pickSpecies(fish.pos, fish.radius);
+    const key = this.hashString(fish.id);
+    const species = this.pickSpeciesByKey(key);
+    const variant = this.variantPaletteByKey(species, key);
     this.renderFishBody(
       fish.pos,
       fish.radius,
-      species.palette,
+      variant,
       species.body,
       species.tail,
       species.pattern,
@@ -263,10 +318,92 @@ export class Renderer {
     return x - Math.floor(x);
   }
 
-  private pickSpecies(pos: Vec2, radius: number): Species {
-    const seed = Math.floor(pos.x * 0.12 + pos.y * 0.18 + radius * 7.7);
+  private pickSpeciesByKey(seed: number): Species {
     const idx = Math.floor(this.hash(seed) * SPECIES.length) % SPECIES.length;
     return SPECIES[idx] ?? SPECIES[0];
+  }
+
+  private variantPaletteByKey(species: Species, seed: number): Species['palette'] {
+    const t = this.hash(seed + 101.7);
+    const shift = (t - 0.5) * 18; // -9 ~ +9
+    const brighten = (t - 0.5) * 0.08;
+    const tweak = (hex: string) => this.tuneColor(hex, shift, brighten);
+    return {
+      base: tweak(species.palette.base),
+      base2: tweak(species.palette.base2),
+      stripe: tweak(species.palette.stripe),
+      outline: species.palette.outline,
+      cheek: species.palette.cheek
+    };
+  }
+
+  private hashString(input: string) {
+    let h = 2166136261;
+    for (let i = 0; i < input.length; i++) {
+      h ^= input.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return h >>> 0;
+  }
+
+  private tuneColor(hex: string, hueShift: number, bright: number) {
+    const c = hex.replace('#', '');
+    const r = parseInt(c.slice(0, 2), 16);
+    const g = parseInt(c.slice(2, 4), 16);
+    const b = parseInt(c.slice(4, 6), 16);
+    let [h, s, l] = this.rgbToHsl(r, g, b);
+    h = (h + hueShift + 360) % 360;
+    l = Math.min(1, Math.max(0, l + bright));
+    const [nr, ng, nb] = this.hslToRgb(h, s, l);
+    return `rgb(${nr}, ${ng}, ${nb})`;
+  }
+
+  private rgbToHsl(r: number, g: number, b: number) {
+    r /= 255;
+    g /= 255;
+    b /= 255;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h = 0;
+    let s = 0;
+    const l = (max + min) / 2;
+    if (max !== min) {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r:
+          h = (g - b) / d + (g < b ? 6 : 0);
+          break;
+        case g:
+          h = (b - r) / d + 2;
+          break;
+        case b:
+          h = (r - g) / d + 4;
+          break;
+      }
+      h *= 60;
+    }
+    return [h, s, l] as const;
+  }
+
+  private hslToRgb(h: number, s: number, l: number) {
+    const c = (1 - Math.abs(2 * l - 1)) * s;
+    const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+    const m = l - c / 2;
+    let r = 0;
+    let g = 0;
+    let b = 0;
+    if (h < 60) [r, g, b] = [c, x, 0];
+    else if (h < 120) [r, g, b] = [x, c, 0];
+    else if (h < 180) [r, g, b] = [0, c, x];
+    else if (h < 240) [r, g, b] = [0, x, c];
+    else if (h < 300) [r, g, b] = [x, 0, c];
+    else [r, g, b] = [c, 0, x];
+    return [
+      Math.round((r + m) * 255),
+      Math.round((g + m) * 255),
+      Math.round((b + m) * 255)
+    ] as const;
   }
 
   private renderFishBody(
@@ -360,27 +497,75 @@ export class Renderer {
       ctx.beginPath();
       ctx.arc(-length * 0.1, 0, r * 0.8, -0.3, Math.PI * 0.5);
       ctx.stroke();
+    } else if (pattern === 'turtle') {
+      ctx.fillStyle = palette.stripe;
+      ctx.beginPath();
+      ctx.ellipse(-length * 0.1, 0, r * 0.55, r * 0.45, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    } else if (pattern === 'seahorse') {
+      ctx.strokeStyle = palette.stripe;
+      ctx.lineWidth = Math.max(2, r * 0.08);
+      ctx.beginPath();
+      ctx.moveTo(-length * 0.2, -height * 0.4);
+      ctx.quadraticCurveTo(r * 0.2, 0, -length * 0.1, height * 0.4);
+      ctx.stroke();
+    } else if (pattern === 'octopus') {
+      ctx.fillStyle = palette.stripe;
+      for (let i = -2; i <= 2; i++) {
+        ctx.beginPath();
+        ctx.arc(i * r * 0.25, r * 0.4, r * 0.08, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else if (pattern === 'jelly') {
+      ctx.strokeStyle = palette.stripe;
+      ctx.lineWidth = Math.max(2, r * 0.07);
+      ctx.beginPath();
+      ctx.arc(0, r * 0.1, r * 0.6, 0, Math.PI);
+      ctx.stroke();
+    } else if (pattern === 'crab') {
+      ctx.strokeStyle = palette.stripe;
+      ctx.lineWidth = Math.max(2, r * 0.08);
+      ctx.beginPath();
+      ctx.moveTo(-r * 0.6, -r * 0.1);
+      ctx.lineTo(-r * 0.9, -r * 0.4);
+      ctx.moveTo(r * 0.6, -r * 0.1);
+      ctx.lineTo(r * 0.9, -r * 0.4);
+      ctx.stroke();
+    } else if (pattern === 'whale') {
+      ctx.fillStyle = palette.stripe;
+      ctx.beginPath();
+      ctx.ellipse(0, r * 0.3, length * 0.8, height * 0.35, 0, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (pattern === 'seahorse') {
+      ctx.strokeStyle = palette.stripe;
+      ctx.lineWidth = Math.max(2, r * 0.08);
+      ctx.beginPath();
+      ctx.arc(-length * 0.55, r * 0.35, r * 0.35, 0, Math.PI * 1.4);
+      ctx.stroke();
     }
 
     // tail
-    ctx.beginPath();
-    ctx.fillStyle = palette.base;
-    ctx.moveTo(-length, 0);
-    if (tail === 'fork') {
-      ctx.lineTo(-length - r * 0.7, -r * 0.5 + wag);
-      ctx.lineTo(-length - r * 0.4, 0 + wag * 0.4);
-      ctx.lineTo(-length - r * 0.7, r * 0.5 + wag);
-    } else if (tail === 'moon') {
-      ctx.quadraticCurveTo(-length - r * 0.9, -r * 0.6 + wag, -length - r * 0.2, 0 + wag * 0.4);
-      ctx.quadraticCurveTo(-length - r * 0.9, r * 0.6 + wag, -length, 0);
-    } else {
-      ctx.lineTo(-length - r * 0.8, -r * 0.7 + wag);
-      ctx.lineTo(-length - r * 0.6, 0 + wag * 0.4);
-      ctx.lineTo(-length - r * 0.8, r * 0.7 + wag);
+    if (tail !== 'none') {
+      ctx.beginPath();
+      ctx.fillStyle = palette.base;
+      ctx.moveTo(-length, 0);
+      if (tail === 'fork') {
+        ctx.lineTo(-length - r * 0.7, -r * 0.5 + wag);
+        ctx.lineTo(-length - r * 0.4, 0 + wag * 0.4);
+        ctx.lineTo(-length - r * 0.7, r * 0.5 + wag);
+      } else if (tail === 'moon') {
+        ctx.quadraticCurveTo(-length - r * 0.9, -r * 0.6 + wag, -length - r * 0.2, 0 + wag * 0.4);
+        ctx.quadraticCurveTo(-length - r * 0.9, r * 0.6 + wag, -length, 0);
+      } else {
+        ctx.lineTo(-length - r * 0.8, -r * 0.7 + wag);
+        ctx.lineTo(-length - r * 0.6, 0 + wag * 0.4);
+        ctx.lineTo(-length - r * 0.8, r * 0.7 + wag);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
     }
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
 
     // fin
     ctx.beginPath();
@@ -391,8 +576,48 @@ export class Renderer {
     ctx.fill();
     ctx.stroke();
 
+    if (pattern === 'turtle') {
+      // flippers
+      ctx.beginPath();
+      ctx.fillStyle = palette.base2;
+      ctx.ellipse(-length * 0.2, r * 0.6, r * 0.35, r * 0.18, 0.3, 0, Math.PI * 2);
+      ctx.ellipse(length * 0.1, r * 0.5, r * 0.35, r * 0.18, -0.3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    } else if (pattern === 'jelly') {
+      // tentacles
+      ctx.strokeStyle = palette.stripe;
+      ctx.lineWidth = Math.max(2, r * 0.06);
+      for (let i = -2; i <= 2; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * r * 0.18, r * 0.7);
+        ctx.quadraticCurveTo(i * r * 0.25, r * 1.05, i * r * 0.12, r * 1.35);
+        ctx.stroke();
+      }
+    } else if (pattern === 'octopus') {
+      // tentacles
+      ctx.strokeStyle = palette.stripe;
+      ctx.lineWidth = Math.max(2, r * 0.08);
+      for (let i = -2; i <= 2; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * r * 0.2, r * 0.6);
+        ctx.quadraticCurveTo(i * r * 0.25, r * 1.0, i * r * 0.12, r * 1.3);
+        ctx.stroke();
+      }
+    } else if (pattern === 'crab') {
+      // legs
+      ctx.strokeStyle = palette.stripe;
+      ctx.lineWidth = Math.max(2, r * 0.08);
+      for (let i = -2; i <= 2; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * r * 0.25, r * 0.5);
+        ctx.lineTo(i * r * 0.4, r * 0.8);
+        ctx.stroke();
+      }
+    }
+
     // eye (big + cute)
-    const blink = Math.sin(this.time * 1.8 + x * 0.03 + y * 0.02) > 0.98 ? 0.25 : 1;
+    const blink = 1;
     ctx.beginPath();
     ctx.fillStyle = '#ffffff';
     ctx.ellipse(r * 0.6, -r * 0.15, r * 0.28, r * 0.28 * blink, 0, 0, Math.PI * 2);
