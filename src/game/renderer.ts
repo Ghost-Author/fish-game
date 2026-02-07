@@ -1,7 +1,7 @@
 import type { Vec2 } from '../../shared/protocol';
 
 export type RenderFish = { pos: Vec2; radius: number; color: string; outline: string; vel: Vec2 };
-export type RenderPlayer = { pos: Vec2; radius: number; color: string; outline: string; accent: string; name?: string };
+export type RenderPlayer = { pos: Vec2; radius: number; color: string; outline: string; accent: string; name?: string; facingRight?: boolean };
 export type RenderItem = { pos: Vec2; kind: 'boost' | 'shield' | 'slow' | 'magnet'; ttl: number };
 export type Bubble = { pos: Vec2; speed: number; radius: number; alpha: number };
 export type Ripple = { pos: Vec2; radius: number; alpha: number };
@@ -118,10 +118,10 @@ export class Renderer {
     }
 
     for (const player of state.players) {
-      this.renderPlayer(player, true);
+      this.renderPlayer(player, player.facingRight ?? true);
     }
 
-    this.renderPlayer(state.player, true, true);
+    this.renderPlayer(state.player, state.player.facingRight ?? true, true);
     ctx.restore();
   }
 

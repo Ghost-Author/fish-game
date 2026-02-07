@@ -219,6 +219,7 @@ applySettings();
 
 startBtn.addEventListener('click', () => {
   mode = 'local';
+  net.disconnect();
   onlineGame.stop();
   hud.showOverlay(false);
   quests = createDailyQuests();
@@ -231,6 +232,7 @@ startBtn.addEventListener('click', () => {
 
 restartBtn.addEventListener('click', () => {
   mode = 'local';
+  net.disconnect();
   onlineGame.stop();
   quests = createDailyQuests();
   localGame.setQuests(quests);
@@ -348,7 +350,8 @@ requestAnimationFrame(() => renderer.render({
     radius: 26,
     color: getSkin(settings.skinId).body,
     outline: getSkin(settings.skinId).outline,
-    accent: getSkin(settings.skinId).accent
+    accent: getSkin(settings.skinId).accent,
+    facingRight: true
   },
   players: [],
   fishes: [],

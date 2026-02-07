@@ -181,7 +181,7 @@ const updateRoom = (room: Room) => {
       if (dist < (fish.radius + player.radius) * 0.85) {
         if (fish.radius <= player.radius * 0.95) {
           room.fishes.splice(i, 1);
-          player.score += Math.round(fish.radius * 2);
+          player.score += Math.max(1, Math.round(fish.radius * 2));
           const growth = fish.radius * fish.radius * 0.45;
           player.radius = Math.sqrt(player.radius * player.radius + growth);
         } else if (player.shield > 0) {
@@ -208,7 +208,7 @@ const updateRoom = (room: Room) => {
         const bigger = a.radius > b.radius * 1.05 ? a : b.radius > a.radius * 1.05 ? b : null;
         const smaller = bigger === a ? b : bigger === b ? a : null;
         if (bigger && smaller) {
-          bigger.score += Math.round(smaller.radius * 2);
+          bigger.score += Math.max(1, Math.round(smaller.radius * 2));
           bigger.radius = Math.sqrt(bigger.radius * bigger.radius + smaller.radius * smaller.radius * 0.5);
           smaller.alive = false;
           smaller.deadAt = Date.now();

@@ -21,6 +21,7 @@ export class OnlineGame {
   private bubbles: Bubble[] = [];
   private ripples: Ripple[] = [];
   private particles: Particle[] = [];
+  private lastPos = new Map<string, Vec2>();
   private state: OnlineState = { players: [], fishes: [], items: [], tick: 0, level: 1, score: 0 };
   private running = false;
   private lastTime = 0;
@@ -90,13 +91,15 @@ export class OnlineGame {
     const you = this.state.you;
     if (!you) return;
 
+    const playerDir = this.estimateDirection(you.id, you.pos);
     const player: RenderPlayer = {
       pos: this.scalePos(you.pos),
       radius: this.scaleRadius(you.radius),
       color: this.skin.body,
       outline: this.skin.outline,
       accent: this.skin.accent,
-      name: you.name
+      name: you.name,
+      facingRight: playerDir
     };
 
     const others: RenderPlayer[] = this.state.players
@@ -107,7 +110,8 @@ export class OnlineGame {
         color: `hsl(${p.hue}, 80%, 62%)`,
         outline: 'rgba(255,255,255,0.7)',
         accent: `hsla(${p.hue}, 80%, 70%, 0.3)`,
-        name: p.name
+        name: p.name,
+        facingRight: this.estimateDirection(p.id, p.pos)
       }));
 
     const fishes: RenderFish[] = this.state.fishes.map((f) => ({
@@ -148,6 +152,13 @@ export class OnlineGame {
 
   private scaleRadius(radius: number) {
     return (radius / WORLD.baseWidth) * this.width;
+  }
+
+  private estimateDirection(id: string, pos: Vec2) {
+    const last = this.lastPos.get(id);
+    this.lastPos.set(id, { ...pos });
+    if (!last) return true;
+    return pos.x >= last.x;
   }
 
   private makeBubble(init = false): Bubble {

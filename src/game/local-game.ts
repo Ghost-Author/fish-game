@@ -229,7 +229,9 @@ export class LocalGame {
 
   private consumeFish(index: number, fish: RenderFish) {
     this.fishes.splice(index, 1);
-    this.score += Math.round(fish.radius * 2);
+    const baseRadius = Number.isFinite(fish.radius) ? fish.radius : 10;
+    const gained = Math.max(1, Math.round(baseRadius * 2));
+    this.score += gained;
     const growth = fish.radius * fish.radius * 0.45;
     this.player.radius = Math.sqrt(this.player.radius * this.player.radius + growth);
     this.ripples.push({ pos: { ...fish.pos }, radius: fish.radius * 0.6, alpha: 0.7 });
@@ -313,7 +315,7 @@ export class LocalGame {
   private updateQuests(fish: RenderFish) {
     for (const quest of this.options.quests) {
       if (quest.done) continue;
-      if (quest.id === 'eat-5' && fish.radius < 18) quest.progress += 1;
+      if (quest.id === 'eat-5') quest.progress += 1;
       if (quest.id === 'score-300') quest.progress = this.score;
       if (quest.id === 'size-2') quest.progress = this.player.radius / 26;
       if (quest.progress >= quest.target) {
@@ -382,7 +384,9 @@ export class LocalGame {
   }
 
   private emitScore() {
-    this.options.onEvents.onScore(this.score, this.player.radius / 26, this.level);
+    if (!Number.isFinite(this.score)) this.score = 0;
+    const size = this.player.radius / 26;
+    this.options.onEvents.onScore(this.score, Number.isFinite(size) ? size : 1, this.level);
   }
 
   private render() {
@@ -392,7 +396,8 @@ export class LocalGame {
       radius: this.player.radius,
       color: skin.body,
       outline: skin.outline,
-      accent: skin.accent
+      accent: skin.accent,
+      facingRight: this.player.vel.x >= 0
     };
 
     this.options.renderer.render({
