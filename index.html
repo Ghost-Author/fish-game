@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>大鱼吃小鱼</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700&family=ZCOOL+KuaiLe&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="game-canvas"></canvas>
+      <div id="hud">
+        <div class="pill" id="score">分数: 0</div>
+        <div class="pill" id="size">体型: 1.0x</div>
+        <div class="pill" id="level">等级: 1</div>
+        <div class="pill" id="quest">任务: 吃掉 5 条小鱼 (0/5)</div>
+      </div>
+      <div id="hud-right">
+        <button id="pause-btn" class="ghost">暂停</button>
+        <button id="settings-btn" class="ghost">设置</button>
+        <button id="achievements-btn" class="ghost">成就</button>
+      </div>
+
+      <div id="joystick" aria-hidden="true">
+        <div id="joystick-base"></div>
+        <div id="joystick-stick"></div>
+      </div>
+
+      <div id="overlay" class="visible">
+        <div class="panel">
+          <h1>大鱼吃小鱼</h1>
+          <p>移动：鼠标/触控跟随（移动端支持虚拟摇杆）</p>
+          <p>目标：吃掉更小的鱼，避开更大的鱼</p>
+          <div class="tabs">
+            <button class="tab active" data-tab="single">单人模式</button>
+            <button class="tab" data-tab="online">在线联机</button>
+          </div>
+
+          <div class="tab-panel active" id="tab-single">
+            <div class="buttons">
+              <button id="start-btn">开始游戏</button>
+              <button id="restart-btn" class="secondary" disabled>重新开始</button>
+            </div>
+          </div>
+
+          <div class="tab-panel" id="tab-online">
+            <div class="form-row">
+              <label>昵称</label>
+              <input id="name-input" maxlength="16" placeholder="请输入昵称" />
+            </div>
+            <div class="form-row">
+              <label>房间号</label>
+              <input id="room-input" maxlength="6" placeholder="例如 ABC12" />
+            </div>
+            <div class="buttons">
+              <button id="create-room-btn">创建房间</button>
+              <button id="join-room-btn" class="secondary">加入房间</button>
+            </div>
+            <div id="room-status"></div>
+          </div>
+
+          <div class="hint">联机默认连接: ws://localhost:5175</div>
+        </div>
+      </div>
+
+      <div id="settings" class="drawer">
+        <div class="drawer-panel">
+          <h2>设置</h2>
+          <label class="row">
+            <span>音乐</span>
+            <input id="music-toggle" type="checkbox" checked />
+          </label>
+          <label class="row">
+            <span>音效</span>
+            <input id="sfx-toggle" type="checkbox" checked />
+          </label>
+          <label class="row">
+            <span>音乐音量</span>
+            <input id="music-volume" type="range" min="0" max="1" step="0.05" value="0.6" />
+          </label>
+          <label class="row">
+            <span>音效音量</span>
+            <input id="sfx-volume" type="range" min="0" max="1" step="0.05" value="0.8" />
+          </label>
+          <label class="row">
+            <span>皮肤</span>
+            <select id="skin-select"></select>
+          </label>
+          <div class="buttons">
+            <button id="close-settings" class="secondary">关闭</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="achievements" class="drawer">
+        <div class="drawer-panel">
+          <h2>成就与排行榜</h2>
+          <div id="achievement-list"></div>
+          <h3>排行榜</h3>
+          <div id="leaderboard"></div>
+          <div class="buttons">
+            <button id="close-achievements" class="secondary">关闭</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="toast"></div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
