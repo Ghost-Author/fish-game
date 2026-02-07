@@ -175,10 +175,15 @@ const updateRoom = (room: Room) => {
   // player vs fish
   for (const player of room.players.values()) {
     if (!player.alive) continue;
+    const speed = Math.hypot(player.vel.x, player.vel.y);
+    const dirX = speed > 10 ? player.vel.x / speed : 0;
+    const dirY = speed > 10 ? player.vel.y / speed : 0;
+    const headX = player.pos.x + dirX * player.radius * 0.35;
+    const headY = player.pos.y + dirY * player.radius * 0.35;
     for (let i = room.fishes.length - 1; i >= 0; i--) {
       const fish = room.fishes[i];
-      const dx = fish.pos.x - player.pos.x;
-      const dy = fish.pos.y - player.pos.y;
+      const dx = fish.pos.x - headX;
+      const dy = fish.pos.y - headY;
       const dist = Math.hypot(dx, dy);
       if (dist < (fish.radius + player.radius) * 0.85) {
         if (fish.radius <= player.radius * 0.95) {

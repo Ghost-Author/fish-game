@@ -18,6 +18,7 @@ export type RenderState = {
   bubbles: Bubble[];
   ripples: Ripple[];
   particles: Particle[];
+  camera?: { x: number; y: number; scale: number };
 };
 
 type Species = {
@@ -157,6 +158,7 @@ export class Renderer {
     ctx.translate(shakeOffset.x, shakeOffset.y);
 
     this.renderBackground(state);
+    this.applyCamera(state);
     this.renderRipples(state);
     this.updateAmbient(state, dt);
     this.renderAmbient(state);
@@ -176,6 +178,15 @@ export class Renderer {
 
     this.renderPlayer(state.player, state.player.facingRight ?? true, true);
     ctx.restore();
+  }
+
+  private applyCamera(state: RenderState) {
+    if (!state.camera) return;
+    const { x, y, scale } = state.camera;
+    const ctx = this.ctx;
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+    ctx.translate(-x, -y);
   }
 
   private getShakeOffset(dt: number) {

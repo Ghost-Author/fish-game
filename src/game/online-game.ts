@@ -129,6 +129,7 @@ export class OnlineGame {
       ttl: i.ttl
     }));
 
+    const scale = Math.min(1, Math.max(0.8, 1 - (you.radius / 26 - 2) / 8));
     this.renderer.render({
       width: this.width,
       height: this.height,
@@ -139,7 +140,12 @@ export class OnlineGame {
       items,
       bubbles: this.bubbles,
       ripples: this.ripples,
-      particles: this.particles
+      particles: this.particles,
+      camera: {
+        x: player.pos.x,
+        y: player.pos.y,
+        scale
+      }
     });
   }
 

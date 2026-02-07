@@ -204,8 +204,13 @@ export class LocalGame {
 
     for (let i = this.fishes.length - 1; i >= 0; i--) {
       const fish = this.fishes[i];
-      const dx = fish.pos.x - this.player.pos.x;
-      const dy = fish.pos.y - this.player.pos.y;
+      const speed = Math.hypot(this.player.vel.x, this.player.vel.y);
+      const dirX = speed > 10 ? this.player.vel.x / speed : 0;
+      const dirY = speed > 10 ? this.player.vel.y / speed : 0;
+      const headX = this.player.pos.x + dirX * this.player.radius * 0.35;
+      const headY = this.player.pos.y + dirY * this.player.radius * 0.35;
+      const dx = fish.pos.x - headX;
+      const dy = fish.pos.y - headY;
       const dist = Math.hypot(dx, dy);
       if (dist < (fish.radius + this.player.radius) * 0.85) {
         if (fish.radius <= this.player.radius * 0.95) {
@@ -413,7 +418,12 @@ export class LocalGame {
       items: this.items,
       bubbles: this.bubbles,
       ripples: this.ripples,
-      particles: this.particles
+      particles: this.particles,
+      camera: {
+        x: this.player.pos.x,
+        y: this.player.pos.y,
+        scale: clamp(1 - (this.player.radius - 50) / 300, 0.8, 1)
+      }
     });
   }
 }
